@@ -201,9 +201,13 @@ void MyApplication::rotateView() {
       glm::rotate(glm::mat4(1.0), delta_xi, camera_left_right) *
       glm::rotate(glm::mat4(1.0), delta_eta, camera_up_down) *
       glm::translate(glm::mat4(1.0), camera_position);
-    camera_position = 
+    glm::vec3 new_camera_position = 
       glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * 
       glm::length(camera_position);
+    if (new_camera_position.x * new_camera_position.x + new_camera_position.y * new_camera_position.y < 10.0f) {
+      return;
+    }
+    camera_position = new_camera_position;
     view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
   else {
