@@ -80,6 +80,17 @@ MyApplication::MyApplication()
   std::cout << "vertices=" << vertices.size() << std::endl;
   std::cout << "index=" << index.size() << std::endl;
 
+  // Add the axes lines
+  const float axis_length = 1000.0;
+  vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 0, 0, 1)});
+  vertices.push_back({glm::vec3(axis_length, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 0, 0, 1)});
+  vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(0, 1, 0, 1)});
+  vertices.push_back({glm::vec3(0, axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(0, 1, 0, 1)});
+  vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(0, 0, 1, 1)});
+  vertices.push_back({glm::vec3(0, 0, axis_length), glm::vec3(0, 0, 1), glm::vec4(0, 0, 1, 1)});
+  for (int i = 0; i < 6; ++i)
+    index.push_back(vertices.size() - 6 + i);
+
   // creation of the vertex array buffer----------------------------------------
 
   // vbo
@@ -140,13 +151,13 @@ void MyApplication::moveView() {
   // compute new view matrix
   glm::vec3 translation(0, 0, 0);
   if (left == GLFW_PRESS)
-    translation.x -= speed;
-  if (right == GLFW_PRESS)
     translation.x += speed;
+  if (right == GLFW_PRESS)
+    translation.x -= speed;
   if (up == GLFW_PRESS)
-    translation.y -= speed;
-  if (down == GLFW_PRESS)
     translation.y += speed;
+  if (down == GLFW_PRESS)
+    translation.y -= speed;
 
   glm::vec3 camera_direction = getCameraDirection();
   camera_direction.z = 0;
@@ -154,11 +165,11 @@ void MyApplication::moveView() {
   glm::vec3 camera_orthogonal = glm::vec3(-camera_direction.y, camera_direction.x, 0);
   translation = translation.y * camera_direction + translation.x * camera_orthogonal;
 
-  camera_position.x += translation.x;
-  camera_position.y += translation.y;
+  camera_position.x -= translation.x;
+  camera_position.y -= translation.y;
 
-  point_position.x += translation.x;
-  point_position.y += translation.y;
+  point_position.x -= translation.x;
+  point_position.y -= translation.y;
 
   view = glm::translate(view, translation);
 }
@@ -181,10 +192,10 @@ void MyApplication::rotateView() {
     float delta_eta = (y_mouse_pos_current - y_mouse_pos) / getHeight();
     x_mouse_pos = x_mouse_pos_current;
     y_mouse_pos = y_mouse_pos_current;
-    if (abs(delta_xi) < 0.01) {
+    if (abs(delta_xi) < 0.001) {
       delta_xi = 0;
     }
-    if (abs(delta_eta) < 0.01) {
+    if (abs(delta_eta) < 0.001) {
       delta_eta = 0;
     }
     if (delta_xi == 0 && delta_eta == 0)
@@ -252,6 +263,14 @@ void MyApplication::loop() {
                  size * size * 2 * 3,  // count
                  GL_UNSIGNED_INT,      // type
                  NULL                  // element array buffer offset
+  );
+
+  // draw the axes with thick lines
+  glLineWidth(5.0);
+  glDrawElements(GL_LINES,  // mode
+                 6,         // count
+                 GL_UNSIGNED_INT,  // type
+                 (void*)(size * size * 2 * 3 * sizeof(GLuint))  // element array buffer offset
   );
 
   glBindVertexArray(0);
