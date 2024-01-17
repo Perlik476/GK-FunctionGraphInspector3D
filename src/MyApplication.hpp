@@ -22,10 +22,12 @@ class MyApplication : public Application {
  private:
   const int size = 2000;
   double x_mouse_pos, y_mouse_pos;
-  float xi, eta;
   float x_pos, y_pos;
+  float camera_x_pos, camera_y_pos, camera_z_pos;
   bool mousePressed = false;
-  void updateView();
+  void moveView();
+  void rotateView();
+  glm::vec3 getCameraDirection();
 
   // shader
   Shader vertexShader;

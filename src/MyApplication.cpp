@@ -117,10 +117,21 @@ MyApplication::MyApplication()
   // vao end
   glBindVertexArray(0);
 
-  view = glm::lookAt(glm::vec3(5.0, 5.0, 20.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+  // camera position
+  camera_x_pos = 10.0f;
+  camera_y_pos = 10.0f;
+  camera_z_pos = 20.0f;
+
+  view = glm::lookAt(glm::vec3(camera_x_pos, camera_y_pos, camera_z_pos),
+                     glm::vec3(x_pos, y_pos, 0.0f), glm::vec3(0, 0, 1));
 }
 
-void MyApplication::updateView() {
+glm::vec3 MyApplication::getCameraDirection() {
+  // camera is at (camera_x_pos, camera_y_pos, camera_z_pos) and look at (x_pos, y_pos, 0)
+  return glm::normalize(glm::vec3(x_pos - camera_x_pos, y_pos - camera_y_pos, -camera_z_pos));
+}
+
+void MyApplication::moveView() {
   // get arrow keys state
   int left = glfwGetKey(getWindow(), GLFW_KEY_LEFT);
   int right = glfwGetKey(getWindow(), GLFW_KEY_RIGHT);
@@ -136,42 +147,47 @@ void MyApplication::updateView() {
   if (right == GLFW_PRESS)
     translation.x += speed;
   if (up == GLFW_PRESS)
-    translation.y += speed;
-  if (down == GLFW_PRESS)
     translation.y -= speed;
+  if (down == GLFW_PRESS)
+    translation.y += speed;
+
+  glm::vec3 camera_direction = getCameraDirection();
+  camera_direction.z = 0;
+  camera_direction = glm::normalize(camera_direction);
+  glm::vec3 camera_orthogonal = glm::vec3(-camera_direction.y, camera_direction.x, 0);
+  translation = translation.y * camera_direction + translation.x * camera_orthogonal;
+
+  camera_x_pos += translation.x;
+  camera_y_pos += translation.y;
 
   x_pos += translation.x;
   y_pos += translation.y;
 
-  // look at x_pos, y_pos
-  view = glm::lookAt(glm::vec3(x_pos + 5.0, y_pos + 5.0, 20.0), glm::vec3(x_pos, y_pos, 0.0), glm::vec3(0.0, 1.0, 0.0));
+  view = glm::translate(view, translation);
+}
 
+void MyApplication::rotateView() {
   if (glfwGetMouseButton(getWindow(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
     // get mouse position
     double x_mouse_pos_current, y_mouse_pos_current;
     glfwGetCursorPos(getWindow(), &x_mouse_pos_current, &y_mouse_pos_current);
 
     // update mouse state
+
     if (!mousePressed) {
       mousePressed = true;
-      x_mouse_pos = x_mouse_pos_current - xi;
-      y_mouse_pos = y_mouse_pos_current - eta;
+      x_mouse_pos = x_mouse_pos_current;
+      y_mouse_pos = y_mouse_pos_current;
     }
 
-    xi = x_mouse_pos_current - x_mouse_pos;
-    eta = y_mouse_pos_current - y_mouse_pos;
+    float delta_xi = (x_mouse_pos_current - x_mouse_pos) / getWidth();
+    float delta_eta = (y_mouse_pos_current - y_mouse_pos) / getHeight();
+
+
   }
   else {
     mousePressed = false;
   }
-
-  // compute new view matrix
-  float theta = 0.01 * xi;
-  float phi = 0.01 * eta;
-  glm::mat4 rotation =
-      glm::rotate(glm::mat4(1.0), theta, glm::vec3(0, 1, 0)) *
-      glm::rotate(glm::mat4(1.0), phi, glm::vec3(1, 0, 0));
-  view = rotation * view;
 }
 
 void MyApplication::loop() {
@@ -183,7 +199,10 @@ void MyApplication::loop() {
   // set matrix : projection + view
   projection = glm::perspective(float(2.0 * atan(getHeight() / 1920.f)),
                                 getWindowRatio(), 0.1f, 100.f);
-  updateView();
+  moveView();
+  rotateView();
+  printf("cx=%f cy=%f cz=%f\n", camera_x_pos, camera_y_pos, camera_z_pos);
+  printf("x=%f y=%f z=%f\n", x_pos, y_pos, 0.0f);
 
   // clear
   glClear(GL_COLOR_BUFFER_BIT);
