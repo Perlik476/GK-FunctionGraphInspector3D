@@ -22,8 +22,8 @@ class MyApplication : public Application {
  private:
   const int size = 2000;
   double x_mouse_pos, y_mouse_pos;
-  float x_pos, y_pos;
-  float camera_x_pos, camera_y_pos, camera_z_pos;
+  glm::vec3 point_position = glm::vec3(0.0, 0.0, 0.0);
+  glm::vec3 camera_position = glm::vec3(0.0, 0.0, 0.0);
   bool mousePressed = false;
   void moveView();
   void rotateView();

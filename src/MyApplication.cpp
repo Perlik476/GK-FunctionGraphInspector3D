@@ -118,17 +118,14 @@ MyApplication::MyApplication()
   glBindVertexArray(0);
 
   // camera position
-  camera_x_pos = 10.0f;
-  camera_y_pos = 10.0f;
-  camera_z_pos = 20.0f;
+  camera_position = glm::vec3(15.0, 15.0, 15.0);
 
-  view = glm::lookAt(glm::vec3(camera_x_pos, camera_y_pos, camera_z_pos),
-                     glm::vec3(x_pos, y_pos, 0.0f), glm::vec3(0, 0, 1));
+  view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
 }
 
 glm::vec3 MyApplication::getCameraDirection() {
   // camera is at (camera_x_pos, camera_y_pos, camera_z_pos) and look at (x_pos, y_pos, 0)
-  return glm::normalize(glm::vec3(x_pos - camera_x_pos, y_pos - camera_y_pos, -camera_z_pos));
+  return glm::normalize(point_position - camera_position);
 }
 
 void MyApplication::moveView() {
@@ -153,15 +150,15 @@ void MyApplication::moveView() {
 
   glm::vec3 camera_direction = getCameraDirection();
   camera_direction.z = 0;
-  camera_direction = glm::normalize(camera_direction);
+  camera_direction = camera_direction;
   glm::vec3 camera_orthogonal = glm::vec3(-camera_direction.y, camera_direction.x, 0);
   translation = translation.y * camera_direction + translation.x * camera_orthogonal;
 
-  camera_x_pos += translation.x;
-  camera_y_pos += translation.y;
+  camera_position.x += translation.x;
+  camera_position.y += translation.y;
 
-  x_pos += translation.x;
-  y_pos += translation.y;
+  point_position.x += translation.x;
+  point_position.y += translation.y;
 
   view = glm::translate(view, translation);
 }
@@ -182,8 +179,27 @@ void MyApplication::rotateView() {
 
     float delta_xi = (x_mouse_pos_current - x_mouse_pos) / getWidth();
     float delta_eta = (y_mouse_pos_current - y_mouse_pos) / getHeight();
+    x_mouse_pos = x_mouse_pos_current;
+    y_mouse_pos = y_mouse_pos_current;
+    // if (delta_xi == 0 && delta_eta == 0)
+    //   return;
 
-
+    glm::vec3 camera_direction = getCameraDirection();
+    glm::vec3 camera_orthogonal_direction_up_down = 
+      glm::normalize(glm::vec3(-camera_direction.y, camera_direction.x, 0));
+    glm::vec3 camera_orthogonal_direction_left_right = 
+      glm::normalize(glm::vec3(camera_orthogonal_direction_up_down.y, -camera_orthogonal_direction_up_down.x, 0));
+    glm::mat4x4 transformation =
+        glm::translate(glm::mat4(1.0), -camera_position) *
+        // glm::rotate(glm::mat4(1.0), -0.01f, camera_orthogonal_direction_up_down) *
+        // glm::rotate(glm::mat4(1.0), -0.01f, camera_orthogonal_direction_left_right) *
+        glm::rotate(glm::mat4(1.0), delta_xi, camera_orthogonal_direction_left_right) *
+        glm::rotate(glm::mat4(1.0), delta_eta, camera_orthogonal_direction_up_down) *
+        glm::translate(glm::mat4(1.0), camera_position);
+    camera_position = glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * glm::length(camera_position);
+    // camera_position = glm::vec3(transformation * glm::vec4(camera_position, 1.0));
+    std::cout << "camera_position norm: " << glm::length(camera_position) << std::endl;
+    view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
   else {
     mousePressed = false;
@@ -201,8 +217,8 @@ void MyApplication::loop() {
                                 getWindowRatio(), 0.1f, 100.f);
   moveView();
   rotateView();
-  printf("cx=%f cy=%f cz=%f\n", camera_x_pos, camera_y_pos, camera_z_pos);
-  printf("x=%f y=%f z=%f\n", x_pos, y_pos, 0.0f);
+  printf("cx=%f cy=%f cz=%f\n", camera_position.x, camera_position.y, camera_position.z);
+  printf("px=%f py=%f pz=%f\n", point_position.x, point_position.y, point_position.z);
 
   // clear
   glClear(GL_COLOR_BUFFER_BIT);
