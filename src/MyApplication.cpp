@@ -181,24 +181,29 @@ void MyApplication::rotateView() {
     float delta_eta = (y_mouse_pos_current - y_mouse_pos) / getHeight();
     x_mouse_pos = x_mouse_pos_current;
     y_mouse_pos = y_mouse_pos_current;
-    // if (delta_xi == 0 && delta_eta == 0)
-    //   return;
+    if (abs(delta_xi) < 0.01) {
+      delta_xi = 0;
+    }
+    if (abs(delta_eta) < 0.01) {
+      delta_eta = 0;
+    }
+    if (delta_xi == 0 && delta_eta == 0)
+      return;
 
     glm::vec3 camera_direction = getCameraDirection();
-    glm::vec3 camera_orthogonal_direction_up_down = 
-      glm::normalize(glm::vec3(-camera_direction.y, camera_direction.x, 0));
-    glm::vec3 camera_orthogonal_direction_left_right = 
-      glm::normalize(glm::vec3(camera_orthogonal_direction_up_down.y, -camera_orthogonal_direction_up_down.x, 0));
+    glm::vec3 global_up = glm::vec3(0, 0, 1);
+    glm::vec3 camera_up_down = 
+      glm::cross(global_up, camera_direction);
+    glm::vec3 camera_left_right = 
+      glm::cross(camera_up_down, camera_direction);
     glm::mat4x4 transformation =
-        glm::translate(glm::mat4(1.0), -camera_position) *
-        // glm::rotate(glm::mat4(1.0), -0.01f, camera_orthogonal_direction_up_down) *
-        // glm::rotate(glm::mat4(1.0), -0.01f, camera_orthogonal_direction_left_right) *
-        glm::rotate(glm::mat4(1.0), delta_xi, camera_orthogonal_direction_left_right) *
-        glm::rotate(glm::mat4(1.0), delta_eta, camera_orthogonal_direction_up_down) *
-        glm::translate(glm::mat4(1.0), camera_position);
-    camera_position = glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * glm::length(camera_position);
-    // camera_position = glm::vec3(transformation * glm::vec4(camera_position, 1.0));
-    std::cout << "camera_position norm: " << glm::length(camera_position) << std::endl;
+      glm::translate(glm::mat4(1.0), -camera_position) *
+      glm::rotate(glm::mat4(1.0), delta_xi, camera_left_right) *
+      glm::rotate(glm::mat4(1.0), delta_eta, camera_up_down) *
+      glm::translate(glm::mat4(1.0), camera_position);
+    camera_position = 
+      glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * 
+      glm::length(camera_position);
     view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
   else {
