@@ -20,7 +20,12 @@ class MyApplication : public Application {
   virtual void loop();
 
  private:
-  const int size = 100;
+  const int size = 2000;
+  double x_mouse_pos, y_mouse_pos;
+  float xi, eta;
+  float x_pos, y_pos;
+  bool mousePressed = false;
+  void updateView();
 
   // shader
   Shader vertexShader;
