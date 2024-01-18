@@ -85,6 +85,12 @@ void MyApplication::createGraph() {
   for (int i = 0; i < 6; ++i)
     index.push_back(vertices.size() - 6 + i);
 
+  // Add bottom-up line at the point position
+  vertices.push_back({glm::vec3(point_position.x, point_position.y, -axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(point_position.x, point_position.y, axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  index.push_back(vertices.size() - 2);
+  index.push_back(vertices.size() - 1);
+
   // creation of the vertex array buffer----------------------------------------
 
   // vbo
@@ -139,8 +145,7 @@ MyApplication::MyApplication()
 }
 
 glm::vec3 MyApplication::getCameraDirection() {
-  // camera is at (camera_x_pos, camera_y_pos, camera_z_pos) and look at (x_pos, y_pos, 0)
-  return glm::normalize(point_position - camera_position);
+  return camera_position - point_position;
 }
 
 void MyApplication::moveView() {
@@ -155,15 +160,15 @@ void MyApplication::moveView() {
   // compute new view matrix
   glm::vec3 translation(0, 0, 0);
   if (left == GLFW_PRESS)
-    translation.x -= speed;
-  if (right == GLFW_PRESS)
     translation.x += speed;
+  if (right == GLFW_PRESS)
+    translation.x -= speed;
   if (up == GLFW_PRESS)
-    translation.y -= speed;
-  if (down == GLFW_PRESS)
     translation.y += speed;
+  if (down == GLFW_PRESS)
+    translation.y -= speed;
 
-  glm::vec3 camera_direction = getCameraDirection();
+  glm::vec3 camera_direction = glm::normalize(getCameraDirection());
   camera_direction.z = 0;
   camera_direction = camera_direction;
   glm::vec3 camera_orthogonal = glm::vec3(-camera_direction.y, camera_direction.x, 0);
@@ -323,6 +328,14 @@ void MyApplication::loop() {
                  6,         // count
                  GL_UNSIGNED_INT,  // type
                  (GLvoid*)(size * size * 2 * 3 * sizeof(GLuint))  // element array buffer offset
+  );
+
+  // draw the bottom-up line
+  glCheckError(__FILE__, __LINE__);
+  glDrawElements(GL_LINES,  // mode
+                 2,         // count
+                 GL_UNSIGNED_INT,  // type
+                 (GLvoid*)((size * size * 2 * 3 + 6) * sizeof(GLuint))  // element array buffer offset
   );
 
   glCheckError(__FILE__, __LINE__);

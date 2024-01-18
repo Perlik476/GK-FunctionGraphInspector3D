@@ -16,7 +16,7 @@ void main(void)
 {
     fPosition = view * vec4(position, 1.0);
     // fLightPosition = view * vec4(2137.0, 2137.0, -2137.0, 1.0);
-    fLightPosition = view * vec4(0.0, 0.0, 1.0, 1.0);
+    fLightPosition = view * vec4(0.0, 0.0, 100.0, 1.0);
 
     fColor = color;
     fNormal = vec3(view * vec4(normal, 0.0));

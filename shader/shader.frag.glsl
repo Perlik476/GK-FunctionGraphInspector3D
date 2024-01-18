@@ -15,7 +15,8 @@ void main(void)
     vec3 r = reflect(o,n);
     vec3 l = normalize(fLightPosition.xyz - fPosition.xyz);
 
-    float ambient = 0.1;
+    // float ambient = 0.1;
+    float ambient = 0.5;
     float diffus = 0.7 * max(0.0, dot(n,l));
     float specular = 0.6 * pow(max(0.0,- dot(r,l)), 4.0);
     // float specular = 0.0;
