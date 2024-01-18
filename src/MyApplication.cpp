@@ -186,8 +186,8 @@ void MyApplication::rotateView() {
 
     // update mouse state
 
-    if (!mousePressed) {
-      mousePressed = true;
+    if (!mouse_pressed) {
+      mouse_pressed = true;
       x_mouse_pos = x_mouse_pos_current;
       y_mouse_pos = y_mouse_pos_current;
     }
@@ -219,14 +219,53 @@ void MyApplication::rotateView() {
     glm::vec3 new_camera_position = 
       glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * 
       glm::length(camera_position);
-    if (new_camera_position.x * new_camera_position.x + new_camera_position.y * new_camera_position.y < 10.0f) {
+    if (
+      glm::length(
+        glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
+      ) < 10.0f) {
       return;
     }
     camera_position = new_camera_position;
     view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
   else {
-    mousePressed = false;
+    mouse_pressed = false;
+  }
+}
+
+void MyApplication::zoomView() {
+  if (glfwGetMouseButton(getWindow(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+    // get mouse position
+    double x_mouse_pos_current, y_mouse_pos_current;
+    glfwGetCursorPos(getWindow(), &x_mouse_pos_current, &y_mouse_pos_current);
+
+    // update mouse state
+
+    if (!mouse_pressed_right) {
+      mouse_pressed_right = true;
+      y_mouse_pos_right = y_mouse_pos_current;
+    }
+
+    float delta_eta = (y_mouse_pos_current - y_mouse_pos_right) / getHeight();
+    y_mouse_pos_right = y_mouse_pos_current;
+    if (abs(delta_eta) < 0.001) {
+      delta_eta = 0;
+    }
+    if (delta_eta == 0)
+      return;
+
+    glm::vec3 new_camera_position = point_position + (camera_position - point_position) * (1.0f + delta_eta);
+    if (
+      glm::length(
+        glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
+      ) < 10.0f) {
+      return;
+    }
+    camera_position = new_camera_position;
+    view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
+  }
+  else {
+    mouse_pressed_right = false;
   }
 }
 
@@ -241,6 +280,7 @@ void MyApplication::loop() {
                                 getWindowRatio(), 0.1f, 100.f);
   moveView();
   rotateView();
+  zoomView();
   if (t - last_refresh_time > 0.5f) {
     createGraph();
     last_refresh_time = t;

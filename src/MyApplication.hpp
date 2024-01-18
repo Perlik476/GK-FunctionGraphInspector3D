@@ -23,11 +23,14 @@ class MyApplication : public Application {
   const int size = 200;
   float last_refresh_time = 0.0;
   double x_mouse_pos, y_mouse_pos;
+  bool mouse_pressed = false;
+  double y_mouse_pos_right;
+  bool mouse_pressed_right = false;
   glm::vec3 point_position = glm::vec3(0.0, 0.0, 0.0);
   glm::vec3 camera_position = glm::vec3(0.0, 0.0, 0.0);
-  bool mousePressed = false;
   void moveView();
   void rotateView();
+  void zoomView();
   glm::vec3 getCameraDirection();
   void createGraph();
 
