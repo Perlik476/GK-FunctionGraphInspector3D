@@ -20,7 +20,8 @@ class MyApplication : public Application {
   virtual void loop();
 
  private:
-  const int size = 2000;
+  const int size = 200;
+  float last_refresh_time = 0.0;
   double x_mouse_pos, y_mouse_pos;
   glm::vec3 point_position = glm::vec3(0.0, 0.0, 0.0);
   glm::vec3 camera_position = glm::vec3(0.0, 0.0, 0.0);
@@ -28,6 +29,7 @@ class MyApplication : public Application {
   void moveView();
   void rotateView();
   glm::vec3 getCameraDirection();
+  void createGraph();
 
   // shader
   Shader vertexShader;

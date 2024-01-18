@@ -37,8 +37,8 @@ VertexType getHeightMap(const glm::vec2 position) {
 
   VertexType v;
   float h = heightMap(position);
-  float hx = 100.f * (heightMap(position + 0.01f * dx) - h);
-  float hy = 100.f * (heightMap(position + 0.01f * dy) - h);
+  float hx = 100.f * (heightMap(position + 0.1f * dx) - h);
+  float hy = 100.f * (heightMap(position + 0.1f * dy) - h);
 
   v.position = glm::vec3(position, h);
   v.normal = glm::normalize(glm::vec3(-hx, -hy, 1.0));
@@ -48,21 +48,15 @@ VertexType getHeightMap(const glm::vec2 position) {
   return v;
 }
 
-MyApplication::MyApplication()
-    : Application(),
-      vertexShader(SHADER_DIR "/shader.vert.glsl", GL_VERTEX_SHADER),
-      fragmentShader(SHADER_DIR "/shader.frag.glsl", GL_FRAGMENT_SHADER),
-      shaderProgram({vertexShader, fragmentShader}) {
-  glCheckError(__FILE__, __LINE__);
-
+void MyApplication::createGraph() {
   // creation of the mesh ------------------------------------------------------
   std::vector<VertexType> vertices;
   std::vector<GLuint> index;
 
   for (int y = 0; y <= size; ++y)
     for (int x = 0; x <= size; ++x) {
-      float xx = (x - size / 2) * 0.01f;
-      float yy = (y - size / 2) * 0.01f;
+      float xx = (x - size / 2) * 0.1f + point_position.x;
+      float yy = (y - size / 2) * 0.1f + point_position.y;
       vertices.push_back(getHeightMap({xx, yy}));
     }
 
@@ -81,7 +75,7 @@ MyApplication::MyApplication()
   std::cout << "index=" << index.size() << std::endl;
 
   // Add the axes lines
-  const float axis_length = 1000.0;
+  const float axis_length = 100.0;
   vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 0, 0, 1)});
   vertices.push_back({glm::vec3(axis_length, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 0, 0, 1)});
   vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(0, 1, 0, 1)});
@@ -127,6 +121,16 @@ MyApplication::MyApplication()
 
   // vao end
   glBindVertexArray(0);
+}
+
+MyApplication::MyApplication()
+    : Application(),
+      vertexShader(SHADER_DIR "/shader.vert.glsl", GL_VERTEX_SHADER),
+      fragmentShader(SHADER_DIR "/shader.frag.glsl", GL_FRAGMENT_SHADER),
+      shaderProgram({vertexShader, fragmentShader}) {
+  glCheckError(__FILE__, __LINE__);
+
+  createGraph();
 
   // camera position
   camera_position = glm::vec3(15.0, 15.0, 15.0);
@@ -151,13 +155,13 @@ void MyApplication::moveView() {
   // compute new view matrix
   glm::vec3 translation(0, 0, 0);
   if (left == GLFW_PRESS)
-    translation.x += speed;
-  if (right == GLFW_PRESS)
     translation.x -= speed;
+  if (right == GLFW_PRESS)
+    translation.x += speed;
   if (up == GLFW_PRESS)
-    translation.y += speed;
-  if (down == GLFW_PRESS)
     translation.y -= speed;
+  if (down == GLFW_PRESS)
+    translation.y += speed;
 
   glm::vec3 camera_direction = getCameraDirection();
   camera_direction.z = 0;
@@ -237,6 +241,11 @@ void MyApplication::loop() {
                                 getWindowRatio(), 0.1f, 100.f);
   moveView();
   rotateView();
+  if (t - last_refresh_time > 0.5f) {
+    createGraph();
+    last_refresh_time = t;
+  }
+
   printf("cx=%f cy=%f cz=%f\n", camera_position.x, camera_position.y, camera_position.z);
   printf("px=%f py=%f pz=%f\n", point_position.x, point_position.y, point_position.z);
 
@@ -266,13 +275,14 @@ void MyApplication::loop() {
   );
 
   // draw the axes with thick lines
-  glLineWidth(5.0);
+  glCheckError(__FILE__, __LINE__);
   glDrawElements(GL_LINES,  // mode
                  6,         // count
                  GL_UNSIGNED_INT,  // type
-                 (void*)(size * size * 2 * 3 * sizeof(GLuint))  // element array buffer offset
+                 (GLvoid*)(size * size * 2 * 3 * sizeof(GLuint))  // element array buffer offset
   );
 
+  glCheckError(__FILE__, __LINE__);
   glBindVertexArray(0);
 
   shaderProgram.unuse();
