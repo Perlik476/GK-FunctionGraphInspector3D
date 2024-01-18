@@ -217,21 +217,22 @@ void MyApplication::rotateView() {
       return;
 
     glm::vec3 camera_direction = getCameraDirection();
+    glm::vec3 camera_direction_normalized = glm::normalize(camera_direction);
     glm::vec3 global_up = glm::vec3(0, 0, 1);
     glm::vec3 camera_up_down = 
-      glm::cross(camera_direction, global_up);
+      glm::cross(camera_direction_normalized, global_up);
     glm::vec3 camera_left_right = 
-      glm::cross(camera_direction, camera_up_down);
+      glm::cross(camera_direction_normalized, camera_up_down);
     glm::mat4x4 transformation =
       glm::translate(
         glm::rotate(
           glm::rotate(
-            glm::translate(glm::mat4(1.0), -camera_position), 
+            glm::translate(glm::mat4(1.0), -camera_direction_normalized), 
             delta_eta, camera_up_down
           ), delta_xi, camera_left_right
-        ), camera_position);
-    glm::vec3 new_camera_position = glm::vec3(transformation * glm::vec4(camera_position, 1.0));
-    new_camera_position = point_position + (new_camera_position - point_position) * glm::length(camera_position - point_position) / glm::length(new_camera_position - point_position);
+        ), camera_direction_normalized);
+    glm::vec3 new_camera_direction = glm::normalize(glm::vec3(transformation * glm::vec4(camera_direction_normalized, 1.0))) * glm::length(camera_direction);
+    glm::vec3 new_camera_position = point_position + new_camera_direction;
     if (
       glm::length(
         glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
