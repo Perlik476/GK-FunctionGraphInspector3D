@@ -24,7 +24,8 @@ struct VertexType {
 };
 
 float heightMap(const glm::vec2 position) {
-  return 2.0 * sin(position.x * position.y) * exp(-0.05 * (position.x * position.x + position.y * position.y)) + 0.5 * sin(position.x * position.x);
+  return 2.0 * sin(position.x * position.y) * exp(-0.05 * (position.x * position.x + position.y * position.y)) 
+    + 0.5 * sin(position.x * position.x) + exp(0.1 * position.x);
 }
 
 float sigmoid(float x) {
@@ -87,11 +88,15 @@ void MyApplication::createGraph() {
   for (int i = 0; i < 6; ++i)
     index.push_back(vertices.size() - 6 + i);
 
-  // Add bottom-up line at the point position
+  // Add axes lines at the point position
   vertices.push_back({glm::vec3(point_position.x, point_position.y, -axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
   vertices.push_back({glm::vec3(point_position.x, point_position.y, axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  index.push_back(vertices.size() - 2);
-  index.push_back(vertices.size() - 1);
+  vertices.push_back({glm::vec3(point_position.x, point_position.y - axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(point_position.x, point_position.y + axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(point_position.x - axis_length, point_position.y, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(point_position.x + axis_length, point_position.y, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  for (int i = 0; i < 6; ++i)
+    index.push_back(vertices.size() - 6 + i);
 
   // creation of the vertex array buffer----------------------------------------
 
@@ -161,7 +166,7 @@ void MyApplication::moveView() {
   int up = glfwGetKey(getWindow(), GLFW_KEY_UP);
   int down = glfwGetKey(getWindow(), GLFW_KEY_DOWN);
 
-  float speed = 0.1;
+  float speed = glm::round(getCameraDistance()) * 0.002f;
 
   // compute new view matrix
   glm::vec3 translation(0, 0, 0);
@@ -337,10 +342,10 @@ void MyApplication::loop() {
                  (GLvoid*)(size * size * 2 * 3 * sizeof(GLuint))  // element array buffer offset
   );
 
-  // draw the bottom-up line
+  // draw the axes at the point position
   glCheckError(__FILE__, __LINE__);
   glDrawElements(GL_LINES,  // mode
-                 2,         // count
+                 6,         // count
                  GL_UNSIGNED_INT,  // type
                  (GLvoid*)((size * size * 2 * 3 + 6) * sizeof(GLuint))  // element array buffer offset
   );
