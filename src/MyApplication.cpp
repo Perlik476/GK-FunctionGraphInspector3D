@@ -57,8 +57,8 @@ void MyApplication::createGraph() {
 
   for (int y = 0; y <= size; ++y)
     for (int x = 0; x <= size; ++x) {
-      float xx = (x - size / 2) * diff + glm::round(point_position.x / diff) * diff; // round to 0.1
-      float yy = (y - size / 2) * diff + glm::round(point_position.y / diff) * diff; // round to 0.1
+      float xx = (x - size / 2) * diff + glm::round(point_position.x / diff) * diff; // round to the nearest multiple of diff
+      float yy = (y - size / 2) * diff + glm::round(point_position.y / diff) * diff; // round to the nearest multiple of diff
       vertices.push_back(getHeightMap({xx, yy}, diff));
     }
 
@@ -236,7 +236,7 @@ void MyApplication::rotateView() {
     if (
       glm::length(
         glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
-      ) < 10.0f) {
+      ) < 5.0f) {
       return;
     }
     camera_position = new_camera_position;
@@ -272,7 +272,7 @@ void MyApplication::zoomView() {
     if (
       glm::length(
         glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
-      ) < 10.0f) {
+      ) < 5.0f) {
       return;
     }
     camera_position = new_camera_position;
@@ -291,7 +291,7 @@ void MyApplication::loop() {
   float t = getTime();
   // set matrix : projection + view
   projection = glm::perspective(float(2.0 * atan(getHeight() / 1920.f)),
-                                getWindowRatio(), 0.1f, 100.f);
+                                getWindowRatio(), 0.1f, 1000.f);
   moveView();
   rotateView();
   zoomView();
