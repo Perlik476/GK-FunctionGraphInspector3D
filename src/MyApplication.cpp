@@ -211,7 +211,6 @@ void MyApplication::rotateView() {
       glm::cross(global_up, camera_direction);
     glm::vec3 camera_left_right = 
       glm::cross(camera_up_down, camera_direction);
-    glm::vec3 camera_position_normalized = glm::normalize(camera_position);
     glm::mat4x4 transformation =
       glm::translate(
         glm::rotate(
@@ -221,7 +220,7 @@ void MyApplication::rotateView() {
           ), delta_xi, camera_left_right
         ), camera_position);
     glm::vec3 new_camera_position = glm::vec3(transformation * glm::vec4(camera_position, 1.0));
-    // new_camera_position = glm::normalize(new_camera_position) * glm::length(camera_position);
+    new_camera_position = point_position + (new_camera_position - point_position) * glm::length(camera_position - point_position) / glm::length(new_camera_position - point_position);
     if (
       glm::length(
         glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
