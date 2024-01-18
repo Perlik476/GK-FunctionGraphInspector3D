@@ -89,12 +89,12 @@ void MyApplication::createGraph() {
     index.push_back(vertices.size() - 6 + i);
 
   // Add axes lines at the point position
-  vertices.push_back({glm::vec3(point_position.x, point_position.y, -axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  vertices.push_back({glm::vec3(point_position.x, point_position.y, axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  vertices.push_back({glm::vec3(point_position.x, point_position.y - axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  vertices.push_back({glm::vec3(point_position.x, point_position.y + axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  vertices.push_back({glm::vec3(point_position.x - axis_length, point_position.y, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
-  vertices.push_back({glm::vec3(point_position.x + axis_length, point_position.y, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(0, 0, -axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(0, 0, axis_length), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(0, -axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(0, axis_length, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(-axis_length, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
+  vertices.push_back({glm::vec3(axis_length, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 1, 1, 1)});
   for (int i = 0; i < 6; ++i)
     index.push_back(vertices.size() - 6 + i);
 
@@ -319,6 +319,7 @@ void MyApplication::loop() {
   // send uniforms
   shaderProgram.setUniform("projection", projection);
   shaderProgram.setUniform("view", view);
+  shaderProgram.setUniform("model", glm::mat4(1.0));
 
   glCheckError(__FILE__, __LINE__);
 
@@ -334,7 +335,7 @@ void MyApplication::loop() {
                  NULL                  // element array buffer offset
   );
 
-  // draw the axes with thick lines
+  // draw the axes
   glCheckError(__FILE__, __LINE__);
   glDrawElements(GL_LINES,  // mode
                  6,         // count
@@ -343,6 +344,7 @@ void MyApplication::loop() {
   );
 
   // draw the axes at the point position
+  shaderProgram.setUniform("model", glm::translate(glm::mat4(1.0), point_position));
   glCheckError(__FILE__, __LINE__);
   glDrawElements(GL_LINES,  // mode
                  6,         // count
