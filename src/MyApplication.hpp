@@ -32,6 +32,7 @@ class MyApplication : public Application {
   void rotateView();
   void zoomView();
   glm::vec3 getCameraDirection();
+  float getCameraDistance();
   void createGraph();
 
   // shader

@@ -31,14 +31,14 @@ float sigmoid(float x) {
   return 1.0 / (1.0 + exp(-x));
 }
 
-VertexType getHeightMap(const glm::vec2 position) {
+VertexType getHeightMap(const glm::vec2 position, float diff) {
   const glm::vec2 dx(1.0, 0.0);
   const glm::vec2 dy(0.0, 1.0);
 
   VertexType v;
   float h = heightMap(position);
-  float hx = 100.f * (heightMap(position + 0.1f * dx) - h);
-  float hy = 100.f * (heightMap(position + 0.1f * dy) - h);
+  float hx = 100.f * (heightMap(position + diff * dx) - h);
+  float hy = 100.f * (heightMap(position + diff * dy) - h);
 
   v.position = glm::vec3(position, h);
   v.normal = glm::normalize(glm::vec3(-hx, -hy, 1.0));
@@ -53,11 +53,13 @@ void MyApplication::createGraph() {
   std::vector<VertexType> vertices;
   std::vector<GLuint> index;
 
+  float diff = glm::round(getCameraDistance()) * 0.004f;
+
   for (int y = 0; y <= size; ++y)
     for (int x = 0; x <= size; ++x) {
-      float xx = (x - size / 2) * 0.1f + glm::round(point_position.x / 0.1f) * 0.1f; // round to 0.1
-      float yy = (y - size / 2) * 0.1f + glm::round(point_position.y / 0.1f) * 0.1f; // round to 0.1
-      vertices.push_back(getHeightMap({xx, yy}));
+      float xx = (x - size / 2) * diff + glm::round(point_position.x / diff) * diff; // round to 0.1
+      float yy = (y - size / 2) * diff + glm::round(point_position.y / diff) * diff; // round to 0.1
+      vertices.push_back(getHeightMap({xx, yy}, diff));
     }
 
   for (int y = 0; y < size; ++y)
@@ -148,6 +150,10 @@ glm::vec3 MyApplication::getCameraDirection() {
   return camera_position - point_position;
 }
 
+float MyApplication::getCameraDistance() {
+  return glm::length(getCameraDirection());
+}
+
 void MyApplication::moveView() {
   // get arrow keys state
   int left = glfwGetKey(getWindow(), GLFW_KEY_LEFT);
@@ -213,9 +219,9 @@ void MyApplication::rotateView() {
     glm::vec3 camera_direction = getCameraDirection();
     glm::vec3 global_up = glm::vec3(0, 0, 1);
     glm::vec3 camera_up_down = 
-      glm::cross(global_up, camera_direction);
+      glm::cross(camera_direction, global_up);
     glm::vec3 camera_left_right = 
-      glm::cross(camera_up_down, camera_direction);
+      glm::cross(camera_direction, camera_up_down);
     glm::mat4x4 transformation =
       glm::translate(
         glm::rotate(
