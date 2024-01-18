@@ -55,8 +55,8 @@ void MyApplication::createGraph() {
 
   for (int y = 0; y <= size; ++y)
     for (int x = 0; x <= size; ++x) {
-      float xx = (x - size / 2) * 0.1f + point_position.x;
-      float yy = (y - size / 2) * 0.1f + point_position.y;
+      float xx = (x - size / 2) * 0.1f + glm::round(point_position.x / 0.1f) * 0.1f; // round to 0.1
+      float yy = (y - size / 2) * 0.1f + glm::round(point_position.y / 0.1f) * 0.1f; // round to 0.1
       vertices.push_back(getHeightMap({xx, yy}));
     }
 
@@ -211,14 +211,17 @@ void MyApplication::rotateView() {
       glm::cross(global_up, camera_direction);
     glm::vec3 camera_left_right = 
       glm::cross(camera_up_down, camera_direction);
+    glm::vec3 camera_position_normalized = glm::normalize(camera_position);
     glm::mat4x4 transformation =
-      glm::translate(glm::mat4(1.0), -camera_position) *
-      glm::rotate(glm::mat4(1.0), delta_xi, camera_left_right) *
-      glm::rotate(glm::mat4(1.0), delta_eta, camera_up_down) *
-      glm::translate(glm::mat4(1.0), camera_position);
-    glm::vec3 new_camera_position = 
-      glm::normalize(glm::vec3(transformation * glm::vec4(camera_position, 1.0))) * 
-      glm::length(camera_position);
+      glm::translate(
+        glm::rotate(
+          glm::rotate(
+            glm::translate(glm::mat4(1.0), -camera_position), 
+            delta_eta, camera_up_down
+          ), delta_xi, camera_left_right
+        ), camera_position);
+    glm::vec3 new_camera_position = glm::vec3(transformation * glm::vec4(camera_position, 1.0));
+    // new_camera_position = glm::normalize(new_camera_position) * glm::length(camera_position);
     if (
       glm::length(
         glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
@@ -281,13 +284,14 @@ void MyApplication::loop() {
   moveView();
   rotateView();
   zoomView();
-  if (t - last_refresh_time > 0.5f) {
+  if (t - last_refresh_time > 0.1f) {
     createGraph();
     last_refresh_time = t;
   }
 
   printf("cx=%f cy=%f cz=%f\n", camera_position.x, camera_position.y, camera_position.z);
   printf("px=%f py=%f pz=%f\n", point_position.x, point_position.y, point_position.z);
+  printf("camera point dist=%f\n", glm::length(camera_position - point_position));
 
   // clear
   glClear(GL_COLOR_BUFFER_BIT);
