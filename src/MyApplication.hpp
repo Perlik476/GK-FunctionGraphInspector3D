@@ -11,6 +11,9 @@
 
 #include "Application.hpp"
 #include "Shader.hpp"
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 
 class MyApplication : public Application {
  public:
@@ -35,17 +38,25 @@ class MyApplication : public Application {
   float getCameraDistance();
   void createGraph();
 
+  FT_Library ft;
+  FT_Face face;
+  void renderText(std::string text, float x, float y, float sx, float sy);
+
   // shader
   Shader vertexShader;
   Shader fragmentShader;
   ShaderProgram shaderProgram;
+
+  Shader vertexShaderText;
+  Shader fragmentShaderText;
+  ShaderProgram shaderProgramText;
 
   // shader matrix uniform
   glm::mat4 projection = glm::mat4(1.0);
   glm::mat4 view = glm::mat4(1.0);
 
   // VBO/VAO/ibo
-  GLuint vao, vbo, ibo;
+  GLuint vao, vbo, ibo, vbotext, vaotext, ibotext;
 };
 
 #endif  // OPENGL_CMAKE_SKELETON_MYAPPLICATION

@@ -129,6 +129,11 @@ void MyApplication::createGraph() {
   shaderProgram.setAttribute("color", 4, sizeof(VertexType),
                              offsetof(VertexType, color));
 
+  glGenBuffers(1, &vbotext);
+  glGenVertexArrays(1, &vaotext);
+  glBindVertexArray(vaotext);
+  glGenBuffers(1, &ibotext);
+
   // bind the ibo
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
@@ -140,8 +145,21 @@ MyApplication::MyApplication()
     : Application(),
       vertexShader(SHADER_DIR "/shader.vert.glsl", GL_VERTEX_SHADER),
       fragmentShader(SHADER_DIR "/shader.frag.glsl", GL_FRAGMENT_SHADER),
-      shaderProgram({vertexShader, fragmentShader}) {
+      shaderProgram({vertexShader, fragmentShader}),
+      vertexShaderText(SHADER_DIR "/text.vert.glsl", GL_VERTEX_SHADER),
+      fragmentShaderText(SHADER_DIR "/text.frag.glsl", GL_FRAGMENT_SHADER),
+      shaderProgramText({vertexShaderText, fragmentShaderText}) {
   glCheckError(__FILE__, __LINE__);
+
+  if(FT_Init_FreeType(&ft)) {
+    fprintf(stderr, "Could not init freetype library\n");
+    return;
+  }
+  if(FT_New_Face(ft, SHADER_DIR "/liberation-sans.ttf", 0, &face)) {
+    fprintf(stderr, "Could not open font\n");
+    return;
+  }
+  FT_Set_Pixel_Sizes(face, 0, 16);
 
   createGraph();
 
@@ -288,6 +306,75 @@ void MyApplication::zoomView() {
   }
 }
 
+void MyApplication::renderText(std::string text, float x, float y, float sx, float sy) {
+  const char *p;
+  FT_GlyphSlot &g = face->glyph;
+
+  GLuint tex;
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+  shaderProgramText.setUniform("tex", 0);
+
+  /* We require 1 byte alignment when uploading texture data */
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	/* Clamping to edges is important to prevent artifacts when scaling */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	/* Linear filtering usually looks best for text */
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  shaderProgramText.setAttribute("coord", 4, 4 * sizeof(GLfloat), 0);
+
+    // Enable alpha blending
+  glEnable(GL_BLEND);
+
+  // Set the blend function
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+  for(p = text.c_str(); *p; p++) {
+    if(FT_Load_Char(face, *p, FT_LOAD_RENDER))
+        continue;
+ 
+    glTexImage2D(
+      GL_TEXTURE_2D,
+      0,
+      GL_RED,
+      g->bitmap.width,
+      g->bitmap.rows,
+      0,
+      GL_RED,
+      GL_UNSIGNED_BYTE,
+      g->bitmap.buffer
+    );
+ 
+    float x2 = x + g->bitmap_left * sx;
+    float y2 = -y - g->bitmap_top * sy;
+    float w = g->bitmap.width * sx;
+    float h = g->bitmap.rows * sy;
+ 
+    GLfloat box[4][4] = {
+        {x2,     -y2    , 0, 0},
+        {x2 + w, -y2    , 1, 0},
+        {x2,     -y2 - h, 0, 1},
+        {x2 + w, -y2 - h, 1, 1},
+    };
+ 
+    glBufferData(GL_ARRAY_BUFFER, sizeof box, box, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+ 
+    x += (g->advance.x/64) * sx;
+    y += (g->advance.y/64) * sy;
+  }
+
+  glDisable(GL_BLEND);
+	glDeleteTextures(1, &tex);
+}
+
+
 void MyApplication::loop() {
   // exit on window close button pressed
   if (glfwWindowShouldClose(getWindow()))
@@ -352,8 +439,29 @@ void MyApplication::loop() {
                  (GLvoid*)((size * size * 2 * 3 + 6) * sizeof(GLuint))  // element array buffer offset
   );
 
-  glCheckError(__FILE__, __LINE__);
-  glBindVertexArray(0);
-
   shaderProgram.unuse();
+
+  glCheckError(__FILE__, __LINE__);
+  glBindVertexArray(vaotext);
+  glBindBuffer(GL_ARRAY_BUFFER, vbotext);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibotext);
+
+  // draw text
+  shaderProgramText.use();
+
+  shaderProgramText.setUniform("color", glm::vec4(1.0, 1.0, 1.0, 1.0));
+
+  std::string point_position_str = "(" + std::to_string(point_position.x) + ", " + std::to_string(point_position.y) + ", " + 
+    std::to_string(point_position.z) + ")";
+
+  float sx = 2.0 / getWidth();
+  float sy = 2.0 / getHeight();
+
+  renderText(point_position_str,
+              -1 + 8 * sx, -1 + 10 * sy, sx, sy);
+
+  shaderProgramText.unuse();
+
+  glCheckError(__FILE__, __LINE__); 
+  glBindVertexArray(0);
 }
