@@ -177,8 +177,10 @@ void MyApplication::moveView() {
   // get arrow keys state
   int left = glfwGetKey(getWindow(), GLFW_KEY_LEFT);
   int right = glfwGetKey(getWindow(), GLFW_KEY_RIGHT);
-  int up = glfwGetKey(getWindow(), GLFW_KEY_UP);
-  int down = glfwGetKey(getWindow(), GLFW_KEY_DOWN);
+  int forward = glfwGetKey(getWindow(), GLFW_KEY_UP);
+  int backward = glfwGetKey(getWindow(), GLFW_KEY_DOWN);
+  int up = glfwGetKey(getWindow(), GLFW_KEY_PAGE_UP);
+  int down = glfwGetKey(getWindow(), GLFW_KEY_PAGE_DOWN);
 
   float speed = glm::round(getCameraDistance()) * 0.002f;
 
@@ -188,22 +190,27 @@ void MyApplication::moveView() {
     translation.x += speed;
   if (right == GLFW_PRESS)
     translation.x -= speed;
-  if (up == GLFW_PRESS)
+  if (forward == GLFW_PRESS)
     translation.y += speed;
-  if (down == GLFW_PRESS)
+  if (backward == GLFW_PRESS)
     translation.y -= speed;
+  if (up == GLFW_PRESS)
+    translation.z -= speed;
+  if (down == GLFW_PRESS)
+    translation.z += speed;
 
   glm::vec3 camera_direction = glm::normalize(getCameraDirection());
   camera_direction.z = 0;
-  camera_direction = camera_direction;
   glm::vec3 camera_orthogonal = glm::vec3(-camera_direction.y, camera_direction.x, 0);
-  translation = translation.y * camera_direction + translation.x * camera_orthogonal;
+  translation = translation.y * camera_direction + translation.x * camera_orthogonal + translation.z * glm::vec3(0, 0, 1);
 
   camera_position.x -= translation.x;
   camera_position.y -= translation.y;
+  camera_position.z -= translation.z;
 
   point_position.x -= translation.x;
   point_position.y -= translation.y;
+  point_position.z -= translation.z;
 
   view = glm::translate(view, translation);
 }
