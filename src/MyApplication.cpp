@@ -94,6 +94,44 @@ void MyApplication::createGraph() {
   for (int i = 0; i < 6; ++i)
     index.push_back(vertices.size() - 6 + i);
 
+  // Add a sphere at 0
+  int current_index = vertices.size();
+  const float sphere_radius = 1.0;
+  const int sphere_resolution = 20;
+  glm::vec4 sphere_color(0.0, 1.0, 1.0, 1.0);
+  for (int i = 0; i < sphere_resolution; ++i) {
+    float theta = 2.0 * M_PI * i / sphere_resolution;
+    for (int j = 0; j < sphere_resolution; ++j) {
+      float phi = M_PI * j / sphere_resolution;
+      vertices.push_back({
+        glm::vec3(
+          sphere_radius * sin(phi) * cos(theta), 
+          sphere_radius * sin(phi) * sin(theta), 
+          sphere_radius * cos(phi)
+        ),
+        glm::vec3(sin(phi) * cos(theta), sin(phi) * sin(theta), cos(phi)), 
+        sphere_color
+      });
+    }
+  }
+  for (int i = 0; i < sphere_resolution; ++i) {
+    for (int j = 0; j < sphere_resolution; ++j) {
+      index.push_back(current_index + i * sphere_resolution + j);
+      index.push_back(current_index + ((i + 1) % sphere_resolution) * sphere_resolution + j);
+      index.push_back(current_index + ((i + 1) % sphere_resolution) * sphere_resolution + (j + 1) % sphere_resolution);
+
+      index.push_back(current_index + ((i + 1) % sphere_resolution) * sphere_resolution + (j + 1) % sphere_resolution);
+      index.push_back(current_index + i * sphere_resolution + (j + 1) % sphere_resolution);
+      index.push_back(current_index + i * sphere_resolution + j);
+    }
+  }
+
+  // add line from (0, 0, 0) to (1, 0, 0)
+  vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), sphere_color});
+  vertices.push_back({glm::vec3(1, 0, 0), glm::vec3(0, 0, 1), sphere_color});
+  for (int i = 0; i < 2; ++i)
+    index.push_back(vertices.size() - 2 + i);
+
   // creation of the vertex array buffer----------------------------------------
 
   // vbo
@@ -262,12 +300,6 @@ void MyApplication::rotateView() {
         ), camera_direction_normalized);
     glm::vec3 new_camera_direction = glm::normalize(glm::vec3(transformation * glm::vec4(camera_direction_normalized, 1.0))) * glm::length(camera_direction);
     glm::vec3 new_camera_position = point_position + new_camera_direction;
-    if (
-      glm::length(
-        glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
-      ) < 5.0f) {
-      return;
-    }
     camera_position = new_camera_position;
     view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
@@ -298,12 +330,6 @@ void MyApplication::zoomView() {
       return;
 
     glm::vec3 new_camera_position = point_position + (camera_position - point_position) * (1.0f + delta_eta);
-    if (
-      glm::length(
-        glm::vec2(new_camera_position.x, new_camera_position.y) - glm::vec2(point_position.x, point_position.y)
-      ) < 5.0f) {
-      return;
-    }
     camera_position = new_camera_position;
     view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
   }
@@ -399,7 +425,7 @@ void MyApplication::changeOptimizer() {
     optimizer = std::make_shared<Newton>(function, gradient.value(), hessian.value());
     optimizer->reset(point_position);
     points.clear();
-    points.push_back(point_position);
+    points.push_back(glm::vec3(point_position.x, point_position.y, function(glm::vec2(point_position.x, point_position.y))));
   }
   else if (glfwGetKey(getWindow(), GLFW_KEY_3) == GLFW_PRESS) {
     if (button_pressed)
@@ -412,7 +438,7 @@ void MyApplication::changeOptimizer() {
     optimizer = std::make_shared<GradientDescent>(function, gradient.value(), 0.1f);
     optimizer->reset(point_position);
     points.clear();
-    points.push_back(point_position);
+    points.push_back(glm::vec3(point_position.x, point_position.y, function(glm::vec2(point_position.x, point_position.y))));
   }
   else if (glfwGetKey(getWindow(), GLFW_KEY_SPACE) == GLFW_PRESS) {
     if (button_pressed)
@@ -428,7 +454,7 @@ void MyApplication::changeOptimizer() {
       camera_position = new_point_position + getCameraDirection();
       point_position = new_point_position;
       view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
-      points.push_back(point_position);
+      points.push_back(new_point_position);
     }
   }
   else {
@@ -498,6 +524,53 @@ void MyApplication::loop() {
                  (GLvoid*)((size * size * 2 * 3 + 6) * sizeof(GLuint))  // element array buffer offset
   );
 
+  for (auto &point : points) {
+    // draw sphere
+    shaderProgram.setUniform(
+      "model", 
+      glm::scale(
+        glm::translate(
+          glm::mat4(1.0), 
+          point
+        ), getCameraDistance() * 0.01f * glm::vec3(1.0, 1.0, 1.0)
+      )
+    );
+    glCheckError(__FILE__, __LINE__);
+    glDrawElements(GL_TRIANGLES,  // mode
+                  6 * 20 * 20,   // count
+                  GL_UNSIGNED_INT,  // type
+                  (GLvoid*)((size * size * 2 * 3 + 6 + 6) * sizeof(GLuint))  // element array buffer offset
+    );
+  }
+
+  for (size_t i = 1; i < points.size(); ++i) {
+    // draw line
+    glm::vec3 p1 = points[i - 1];
+    // glm::vec3 p1 = glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 p2 = points[i];
+    // create the model matrix for the line from p1 to p2 based on line from (0, 0, 0) to (1, 0, 0)
+    // Calculate the translation, scaling and rotation
+    glm::vec3 translation = p1;
+    float scale = glm::length(p2 - p1);
+    glm::vec3 direction = glm::normalize(p2 - p1);
+    glm::vec3 axis = glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), direction);
+    float angle = glm::acos(glm::dot(glm::vec3(1.0f, 0.0f, 0.0f), direction));
+
+    // Create the model matrix
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, translation);
+    model = glm::rotate(model, angle, axis);
+    model = glm::scale(model, glm::vec3(scale, 1.0f, 1.0f));
+    shaderProgram.setUniform("model", model);
+
+    glCheckError(__FILE__, __LINE__);
+    glDrawElements(GL_LINES,  // mode
+                  2,         // count
+                  GL_UNSIGNED_INT,  // type
+                  (GLvoid*)((size * size * 2 * 3 + 6 + 6 + 6 * 20 * 20) * sizeof(GLuint))  // element array buffer offset
+    );
+  }
+
   shaderProgram.unuse();
 
   glCheckError(__FILE__, __LINE__);
@@ -512,14 +585,12 @@ void MyApplication::loop() {
 
   std::string point_position_str = "x:" + std::to_string(point_position.x) + ", y:" + std::to_string(point_position.y) + ", z: " + 
     std::to_string(point_position.z) + ", f(x,y): " + std::to_string(function(glm::vec2(point_position.x, point_position.y)));
-
   std::string optimizer_str = "Optimizer: " + (optimizer 
     ? (optimizer->toString() + " at (" + std::to_string(points[points.size() - 1].x) + ", " + std::to_string(points[points.size() - 1].y)) + ")" 
     : "None");
 
   float sx = 2.0 / getWidth();
   float sy = 2.0 / getHeight();
-
   renderText(point_position_str,
               -1 + 8 * sx, -1 + 10 * sy, sx, sy);
   renderText(optimizer_str,

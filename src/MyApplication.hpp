@@ -36,7 +36,7 @@ private:
   std::shared_ptr<Optimizer> optimizer;
   void changeOptimizer();
   bool button_pressed = false;
-  std::vector<glm::vec2> points;
+  std::vector<glm::vec3> points;
 
   // graphics variables
   const int size = 200;
