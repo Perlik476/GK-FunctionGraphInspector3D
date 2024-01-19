@@ -39,8 +39,9 @@ VertexType getHeightMap(const glm::vec2 position, float diff, std::function<floa
   v.position = glm::vec3(position, h);
   v.normal = glm::normalize(glm::vec3(-hx, -hy, 1.0));
 
-  float c = sigmoid(h);
-  v.color = glm::vec4(c, 1.0 - c, 1.0, 1.0);
+  float c = sigmoid(0.1f * h);
+  float c2 = sigmoid(h);
+  v.color = glm::vec4(c2, 1.0 - c2, c, 1.0);
   return v;
 }
 
