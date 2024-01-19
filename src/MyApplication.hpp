@@ -13,16 +13,18 @@
 #include "Shader.hpp"
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include <functional>
 
 
 class MyApplication : public Application {
  public:
-  MyApplication();
+  MyApplication(std::function<float(glm::vec2)>);
 
  protected:
   virtual void loop();
 
  private:
+  std::function<float(glm::vec2)> func;
   const int size = 200;
   float last_refresh_time = 0.0;
   double x_mouse_pos, y_mouse_pos;
@@ -31,6 +33,7 @@ class MyApplication : public Application {
   bool mouse_pressed_right = false;
   glm::vec3 point_position = glm::vec3(0.0, 0.0, 0.0);
   glm::vec3 camera_position = glm::vec3(0.0, 0.0, 0.0);
+
   void moveView();
   void rotateView();
   void zoomView();

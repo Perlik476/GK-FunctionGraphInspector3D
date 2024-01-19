@@ -23,23 +23,18 @@ struct VertexType {
   glm::vec4 color;
 };
 
-float heightMap(const glm::vec2 position) {
-  return 2.0 * sin(position.x * position.y) * exp(-0.05 * (position.x * position.x + position.y * position.y)) 
-    + 0.5 * sin(position.x * position.x) + exp(0.1 * position.x);
-}
-
 float sigmoid(float x) {
   return 1.0 / (1.0 + exp(-x));
 }
 
-VertexType getHeightMap(const glm::vec2 position, float diff) {
+VertexType getHeightMap(const glm::vec2 position, float diff, std::function<float(glm::vec2)> func) {
   const glm::vec2 dx(1.0, 0.0);
   const glm::vec2 dy(0.0, 1.0);
 
   VertexType v;
-  float h = heightMap(position);
-  float hx = 100.f * (heightMap(position + diff * dx) - h);
-  float hy = 100.f * (heightMap(position + diff * dy) - h);
+  float h = func(position);
+  float hx = 100.f * (func(position + diff * dx) - h);
+  float hy = 100.f * (func(position + diff * dy) - h);
 
   v.position = glm::vec3(position, h);
   v.normal = glm::normalize(glm::vec3(-hx, -hy, 1.0));
@@ -60,7 +55,7 @@ void MyApplication::createGraph() {
     for (int x = 0; x <= size; ++x) {
       float xx = (x - size / 2) * diff + glm::round(point_position.x / diff) * diff; // round to the nearest multiple of diff
       float yy = (y - size / 2) * diff + glm::round(point_position.y / diff) * diff; // round to the nearest multiple of diff
-      vertices.push_back(getHeightMap({xx, yy}, diff));
+      vertices.push_back(getHeightMap({xx, yy}, diff, func));
     }
 
   for (int y = 0; y < size; ++y)
@@ -141,8 +136,9 @@ void MyApplication::createGraph() {
   glBindVertexArray(0);
 }
 
-MyApplication::MyApplication()
+MyApplication::MyApplication(std::function<float(glm::vec2)> func)
     : Application(),
+      func(func),
       vertexShader(SHADER_DIR "/shader.vert.glsl", GL_VERTEX_SHADER),
       fragmentShader(SHADER_DIR "/shader.frag.glsl", GL_FRAGMENT_SHADER),
       shaderProgram({vertexShader, fragmentShader}),
@@ -451,8 +447,8 @@ void MyApplication::loop() {
 
   shaderProgramText.setUniform("color", glm::vec4(1.0, 1.0, 1.0, 1.0));
 
-  std::string point_position_str = "(" + std::to_string(point_position.x) + ", " + std::to_string(point_position.y) + ", " + 
-    std::to_string(point_position.z) + ")";
+  std::string point_position_str = "x:" + std::to_string(point_position.x) + ", y:" + std::to_string(point_position.y) + ", z: " + 
+    std::to_string(point_position.z) + ", f(x,y): " + std::to_string(func(glm::vec2(point_position.x, point_position.y)));
 
   float sx = 2.0 / getWidth();
   float sy = 2.0 / getHeight();
