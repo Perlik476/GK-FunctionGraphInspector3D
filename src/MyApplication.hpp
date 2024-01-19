@@ -13,18 +13,32 @@
 #include "Shader.hpp"
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <functional>
+#include <utils.hpp>
+#include <Optimizers.hpp>
+#include <optional>
+#include <memory>
 
 
 class MyApplication : public Application {
- public:
-  MyApplication(std::function<float(glm::vec2)>);
+public:
+  MyApplication(func_t function, std::optional<grad_t> gradient, std::optional<hess_t> hessian);
 
- protected:
+protected:
   virtual void loop();
 
- private:
-  std::function<float(glm::vec2)> func;
+private:
+  // function
+  func_t function;
+  std::optional<grad_t> gradient;
+  std::optional<hess_t> hessian;
+
+  // optimizer
+  std::shared_ptr<Optimizer> optimizer;
+  void changeOptimizer();
+  bool button_pressed = false;
+  std::vector<glm::vec2> points;
+
+  // graphics variables
   const int size = 200;
   float last_refresh_time = 0.0;
   double x_mouse_pos, y_mouse_pos;

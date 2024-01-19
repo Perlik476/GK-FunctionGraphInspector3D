@@ -7,13 +7,20 @@
  */
 
 #include "MyApplication.hpp"
+#include "utils.hpp"
+#include <optional>
 
 int main(int argc, const char* argv[]) {
   auto function = [](glm::vec2 position) {
-    return 2.0 * sin(position.x * position.y) * exp(-0.05 * (position.x * position.x + position.y * position.y)) 
-    + 0.5 * sin(position.x * position.x) + exp(0.1 * position.x);
+    return sin(position.x) + cos(position.y);
   };
-  MyApplication app = MyApplication(function);
+  auto gradient = [](glm::vec2 position) {
+    return glm::vec2(cos(position.x), -sin(position.y));
+  };
+  auto hessian = [](glm::vec2 position) {
+    return glm::mat2(-sin(position.x), 0.0, 0.0, -cos(position.y));
+  };
+  MyApplication app = MyApplication(function, std::make_optional(gradient), std::make_optional(hessian));
   app.run();
   return 0;
 }

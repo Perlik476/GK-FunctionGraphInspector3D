@@ -56,7 +56,7 @@ void MyApplication::createGraph() {
     for (int x = 0; x <= size; ++x) {
       float xx = (x - size / 2) * diff + glm::round(point_position.x / diff) * diff; // round to the nearest multiple of diff
       float yy = (y - size / 2) * diff + glm::round(point_position.y / diff) * diff; // round to the nearest multiple of diff
-      vertices.push_back(getHeightMap({xx, yy}, diff, func));
+      vertices.push_back(getHeightMap({xx, yy}, diff, function));
     }
 
   for (int y = 0; y < size; ++y)
@@ -70,8 +70,8 @@ void MyApplication::createGraph() {
       index.push_back((x + 0) + (size + 1) * (y + 0));
     }
 
-  std::cout << "vertices=" << vertices.size() << std::endl;
-  std::cout << "index=" << index.size() << std::endl;
+  // std::cout << "vertices=" << vertices.size() << std::endl;
+  // std::cout << "index=" << index.size() << std::endl;
 
   // Add the axes lines
   const float axis_length = 100.0;
@@ -137,9 +137,11 @@ void MyApplication::createGraph() {
   glBindVertexArray(0);
 }
 
-MyApplication::MyApplication(std::function<float(glm::vec2)> func)
+MyApplication::MyApplication(func_t func, std::optional<grad_t> grad, std::optional<hess_t> hess)
     : Application(),
-      func(func),
+      function(func),
+      gradient(grad),
+      hessian(hess),
       vertexShader(SHADER_DIR "/shader.vert.glsl", GL_VERTEX_SHADER),
       fragmentShader(SHADER_DIR "/shader.frag.glsl", GL_FRAGMENT_SHADER),
       shaderProgram({vertexShader, fragmentShader}),
@@ -378,27 +380,80 @@ void MyApplication::renderText(std::string text, float x, float y, float sx, flo
 	glDeleteTextures(1, &tex);
 }
 
+void MyApplication::changeOptimizer() {
+  if (glfwGetKey(getWindow(), GLFW_KEY_1) == GLFW_PRESS) {
+    if (button_pressed)
+      return;
+    button_pressed = true;
+    optimizer = nullptr;
+    points.clear();
+  }
+  else if (glfwGetKey(getWindow(), GLFW_KEY_2) == GLFW_PRESS) {
+    if (button_pressed)
+      return;
+    button_pressed = true;
+    if (!gradient || !hessian) {
+      std::cout << "Gradient or Hessian are not defined" << std::endl;
+      return;
+    }
+    optimizer = std::make_shared<Newton>(function, gradient.value(), hessian.value());
+    optimizer->reset(point_position);
+    points.clear();
+    points.push_back(point_position);
+  }
+  else if (glfwGetKey(getWindow(), GLFW_KEY_3) == GLFW_PRESS) {
+    if (button_pressed)
+      return;
+    button_pressed = true;
+    if (!gradient) {
+      std::cout << "Gradient is not defined" << std::endl;
+      return;
+    }
+    optimizer = std::make_shared<GradientDescent>(function, gradient.value(), 0.1f);
+    optimizer->reset(point_position);
+    points.clear();
+    points.push_back(point_position);
+  }
+  else if (glfwGetKey(getWindow(), GLFW_KEY_SPACE) == GLFW_PRESS) {
+    if (button_pressed)
+      return;
+    button_pressed = true;
+    if (optimizer) {
+      glm::vec2 new_point = optimizer->step();
+      if (new_point.x != new_point.x || new_point.y != new_point.y) {
+        std::cout << "Iteration failed" << std::endl;
+        return;
+      }
+      glm::vec3 new_point_position = glm::vec3(new_point, function(new_point));
+      camera_position = new_point_position + getCameraDirection();
+      point_position = new_point_position;
+      view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
+      points.push_back(point_position);
+    }
+  }
+  else {
+    button_pressed = false;
+  }
+}
 
 void MyApplication::loop() {
   // exit on window close button pressed
   if (glfwWindowShouldClose(getWindow()))
     exit();
 
-  float t = getTime();
+  changeOptimizer();
+
   // set matrix : projection + view
   projection = glm::perspective(float(2.0 * atan(getHeight() / 1920.f)),
                                 getWindowRatio(), 0.1f, 1000.f);
   moveView();
   rotateView();
   zoomView();
+  float t = getTime();
   if (t - last_refresh_time > 0.1f) {
     createGraph();
     last_refresh_time = t;
   }
-
-  printf("cx=%f cy=%f cz=%f\n", camera_position.x, camera_position.y, camera_position.z);
-  printf("px=%f py=%f pz=%f\n", point_position.x, point_position.y, point_position.z);
-  printf("camera point dist=%f\n", glm::length(camera_position - point_position));
 
   // clear
   glClear(GL_COLOR_BUFFER_BIT);
@@ -456,13 +511,19 @@ void MyApplication::loop() {
   shaderProgramText.setUniform("color", glm::vec4(1.0, 1.0, 1.0, 1.0));
 
   std::string point_position_str = "x:" + std::to_string(point_position.x) + ", y:" + std::to_string(point_position.y) + ", z: " + 
-    std::to_string(point_position.z) + ", f(x,y): " + std::to_string(func(glm::vec2(point_position.x, point_position.y)));
+    std::to_string(point_position.z) + ", f(x,y): " + std::to_string(function(glm::vec2(point_position.x, point_position.y)));
+
+  std::string optimizer_str = "Optimizer: " + (optimizer 
+    ? (optimizer->toString() + " at (" + std::to_string(points[points.size() - 1].x) + ", " + std::to_string(points[points.size() - 1].y)) + ")" 
+    : "None");
 
   float sx = 2.0 / getWidth();
   float sy = 2.0 / getHeight();
 
   renderText(point_position_str,
               -1 + 8 * sx, -1 + 10 * sy, sx, sy);
+  renderText(optimizer_str,
+              -1 + 8 * sx, 1 - 12 * sy, sx, sy);
 
   shaderProgramText.unuse();
 

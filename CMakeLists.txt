@@ -7,9 +7,9 @@ find_package(Freetype REQUIRED)
 # The main executable
 add_executable(graphs
   src/Application.cpp
-  src/Application.cpp
+  src/Application.hpp
   src/MyApplication.cpp
-  src/MyApplication.cpp
+  src/MyApplication.hpp
   src/glError.hpp
   src/glError.cpp
   src/main.cpp
@@ -17,7 +17,7 @@ add_executable(graphs
   src/Shader.cpp
 )
 
-set_property(TARGET graphs PROPERTY CXX_STANDARD 11)
+set_property(TARGET graphs PROPERTY CXX_STANDARD 17)
 target_compile_options(graphs PRIVATE -Wall)
 
 add_definitions(-DGLEW_STATIC)
