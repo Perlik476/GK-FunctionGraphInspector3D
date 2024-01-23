@@ -532,7 +532,7 @@ void MyApplication::loop() {
         glm::translate(
           glm::mat4(1.0), 
           point
-        ), getCameraDistance() * 0.01f * glm::vec3(1.0, 1.0, 1.0)
+        ), getCameraDistance() * 0.008f * glm::vec3(1.0, 1.0, 1.0)
       )
     );
     glCheckError(__FILE__, __LINE__);
