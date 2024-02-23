@@ -70,9 +70,6 @@ void MyApplication::createGraph() {
       index.push_back((x + 0) + (size + 1) * (y + 0));
     }
 
-  // std::cout << "vertices=" << vertices.size() << std::endl;
-  // std::cout << "index=" << index.size() << std::endl;
-
   // Add the axes lines
   const float axis_length = 100.0;
   vertices.push_back({glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(1, 0, 0, 1)});
@@ -200,9 +197,7 @@ MyApplication::MyApplication(func_t func, std::optional<grad_t> grad, std::optio
 
   createGraph();
 
-  // camera position
   camera_position = glm::vec3(15.0, 15.0, 15.0);
-
   view = glm::lookAt(camera_position, point_position, glm::vec3(0, 0, 1));
 }
 
@@ -263,7 +258,6 @@ void MyApplication::rotateView() {
     glfwGetCursorPos(getWindow(), &x_mouse_pos_current, &y_mouse_pos_current);
 
     // update mouse state
-
     if (!mouse_pressed) {
       mouse_pressed = true;
       x_mouse_pos = x_mouse_pos_current;
@@ -546,10 +540,8 @@ void MyApplication::loop() {
   for (size_t i = 1; i < points.size(); ++i) {
     // draw line
     glm::vec3 p1 = points[i - 1];
-    // glm::vec3 p1 = glm::vec3(0.0, 0.0, 0.0);
     glm::vec3 p2 = points[i];
     // create the model matrix for the line from p1 to p2 based on line from (0, 0, 0) to (1, 0, 0)
-    // Calculate the translation, scaling and rotation
     glm::vec3 translation = p1;
     float scale = glm::length(p2 - p1);
     glm::vec3 direction = glm::normalize(p2 - p1);
