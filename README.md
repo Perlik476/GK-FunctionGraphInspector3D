@@ -1,3 +1,20 @@
+FunctionGraphInspector3D
+========================
+
+This is a fork of OpenGL_CMake_Skeleton. It's readme is available below. The project is written in C++ and uses OpenGL for rendering. The project is built using CMake and uses the GLFW, GLEW, and GLM libraries.
+
+This project is a 3D function graph inspector. It allows the user to input a function from R^2 to R and visualize it's graph in 3D with the ability to rotate, zoom in and out, and move the camera across the graph. Additionally the user can choose a point on the graph which will be the starting point for optimization algorithms. The user can choose between the following algorithms: Gradient Descent and Newton's Method. The app then visualizes the optimization process showing the path the algorithm takes to find the minimum of the function.
+
+Controls
+------------------------
+
+- **arrows** - Move the camera
+- **left mouse button** - Rotate the camera with the mouse movement
+- **right mouse button** - Zoom in and out with the mouse y-axis movement
+- **1/2/3** - Set the starting point for the algorithm to the currently selected point on the graph (1 for unselecting the point, 2 for setting the starting point for Newton's Method, 3 for setting the starting point for Gradient Descent)
+- **spacebar** - Take a step in the optimization process
+
+
 OpenGL CMake Skeleton [![Build Status](https://travis-ci.org/ArthurSonzogni/OpenGL_CMake_Skeleton.svg?branch=master)](https://travis-ci.org/ArthurSonzogni/OpenGL_CMake_Skeleton)
 =======================
 
